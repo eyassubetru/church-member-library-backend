@@ -62,3 +62,69 @@ export const signupNewMember = async (req, res) => {
     res.status(500).json({ message: "Signup failed" });
   }
 };
+export const getAllMembers = async (req, res) => {
+  try {
+    const members = await Member.find().sort({ createdAt: -1 });
+    res.json(members);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+export const searchMember = async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    const member = await Member.findOne({
+      $or: [
+        { name: new RegExp(q, "i") },
+        { email: q },
+        { phone: q }
+      ]
+    });
+
+    if (!member) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    res.json(member);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+export const updateMember = async (req, res) => {
+  try {
+    const memberId = req.params.id;
+
+    const updatedMember = await Member.findByIdAndUpdate(
+      memberId,
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedMember) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    res.json(updatedMember);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteMember = async (req, res) => {
+  try {
+    const member = await Member.findByIdAndDelete(req.params.id);
+
+    if (!member) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    res.json({ message: "Member deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
