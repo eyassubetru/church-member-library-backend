@@ -4,88 +4,101 @@ import { randomBytes } from "crypto";
 import {sendEmail} from '../utils/email.js'
 
 export const login = async (req, res) => {
-  const { username, password } = req.body;
+  try {
+    const { identifier, password } = req.body;
+    // identifier = username OR email
 
-  const member = await Member.findOne({ username });
-  if (!member) {
-    return res.status(400).json({ message: "Invalid credentials" });
-  }
-
-  const isMatch = await member.comparePassword(password);
-  if (!isMatch) {
-    return res.status(400).json({ message: "Invalid credentials" });
-  }
-
-  const token = jwt.sign(
-    { id: member._id, role: member.role },
-    process.env.JWT_SECRET,
-    { expiresIn: "1d" }
-  );
-
-  res.json({
-    token,
-    member: {
-      id: member._id,
-      name: member.name,
-      role: member.role
+    if (!identifier || !password) {
+      return res.status(400).json({ message: "Missing credentials" });
     }
-  });
+
+    const member = await Member.findOne({
+      $or: [
+        { username: identifier },
+        { email: identifier }
+      ]
+    });
+
+    if (!member) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const isMatch = await member.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      { id: member._id, role: member.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      token,
+      member: {
+        id: member._id,
+        name: member.name,
+        role: member.role
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Login failed" });
+  }
 };
 
+
 export const forgotPassword = async (req, res) => {
+
+  const generateResetCode = () =>
+   Math.floor(100000 + Math.random() * 900000).toString();
+
   try {
     const { email } = req.body;
 
     const member = await Member.findOne({ email });
     if (!member) {
-      return res.status(404).json({ message: "No account with this email" });
+      return res.status(404).json({ message: "Email not found" });
     }
 
-    const token = randomBytes(4).toString("hex");
+    const code = generateResetCode();
 
-    member.resetPasswordToken = token;
-    member.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 min
+    member.resetCode = code;
+    member.resetCodeExpires = Date.now() + 10 * 60 * 1000; // 10 min
     await member.save();
-    console.log(token,"ooooooooo")
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
     await sendEmail(
-      member.email,
-      "Password Reset",
-      `
-      You requested a password reset.
-
-      Click the link below to reset your password:
-      ${resetLink}
-
-      This link expires in 15 minutes.
-      `
+      email,
+      "Password Reset Code",
+      `Your password reset code is: ${code}`
     );
 
-    res.json({ message: "Password reset email sent" });
+    res.json({ message: "Reset code sent to email" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Failed to send reset email" });
+    res.status(500).json({ message: "Failed to send reset code" });
   }
 };
 
+
 export const resetPassword = async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
+    const { email, code, newPassword } = req.body;
 
     const member = await Member.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }
+      email,
+      resetCode: code,
+      resetCodeExpires: { $gt: Date.now() }
     });
 
     if (!member) {
-      return res.status(400).json({ message: "Invalid or expired token" });
+      return res.status(400).json({ message: "Invalid or expired code" });
     }
 
-    member.password = newPassword; // auto-hashed by pre-save
-    member.resetPasswordToken = undefined;
-    member.resetPasswordExpires = undefined;
-
+    member.password = newPassword;
+    member.resetCode = undefined;
+    member.resetCodeExpires = undefined;
     await member.save();
 
     res.json({ message: "Password reset successful" });
@@ -94,6 +107,7 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Password reset failed" });
   }
 };
+
 
 
 

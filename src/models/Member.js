@@ -46,8 +46,8 @@ const MemberSchema = new mongoose.Schema({
   password: String,
   role: { type: String, enum: ["member", "admin"], default: "member" },
 
-  resetPasswordToken: String,
-  resetPasswordExpires: Date,
+  resetCode: String,
+  resetCodeExpires: Date,
 
 }, { timestamps: true });
 

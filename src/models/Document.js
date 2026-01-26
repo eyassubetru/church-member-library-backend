@@ -1,21 +1,49 @@
 import mongoose from "mongoose";
 
-const DocumentSchema = new mongoose.Schema({
+const DocumentSchema = new mongoose.Schema(
+  {
     memberId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Member",
-        required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Member",
+      required: true
     },
-    title: String,
-    documentType: String,
-    documentNumber: String,
-    filePath: String,
-    fileType: String,
-    uploadedByAdminId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
-    }
-}, { timestamps: true });
 
-const Document = mongoose.model('Document', DocumentSchema);
+    title: {
+      type: String,
+      required: true
+    },
+
+    documentType: {
+      type: String 
+    },
+
+    documentNumber: {
+      type: String
+    },
+
+    // Cloudinary secure URL
+    filePath: {
+      type: String,
+      required: true
+    },
+
+    // pdf, image/jpeg, image/png, etc
+    fileType: {
+      type: String
+    },
+
+    documentSource: {
+      type: String,
+    },
+
+    // Who uploaded it (admin or member)
+    uploadedByMemberId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Member"
+    }
+  },
+  { timestamps: true }
+);
+
+const Document = mongoose.model("Document", DocumentSchema);
 export default Document;
