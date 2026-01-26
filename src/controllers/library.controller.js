@@ -8,10 +8,20 @@ export const createLibraryItem = async (req, res) => {
   try {
     const data = req.body;
 
-    // If soft copy, upload file
-    if (data.isSoftCopy && req.file) {
-      const url = await uploadLibraryItemToCloudinary(req.file.path);
+    // Check if soft copy exists and upload
+    if (req.files?.file?.[0]) {
+      const url = await uploadLibraryItemToCloudinary(req.files.file[0].path);
       data.filePath = url;
+      data.isSoftCopy = true;
+    } else {
+      data.isSoftCopy = false;
+      data.filePath = null;
+    }
+
+    // Check if cover exists and upload
+    if (req.files?.cover?.[0]) {
+      const coverUrl = await uploadLibraryItemToCloudinary(req.files.cover[0].path);
+      data.bookCoverPic = coverUrl;
     }
 
     const item = await LibraryItem.create(data);
@@ -21,38 +31,66 @@ export const createLibraryItem = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
-
 // UPDATE library item
 export const updateLibraryItem = async (req, res) => {
   try {
-    const item = await LibraryItem.findById(req.params.id);
-    if (!item) return res.status(404).json({ message: "Item not found" });
+    const itemId = req.params.id;
+    const data = req.body;
 
-    // If soft copy and new file uploaded, delete old and upload new
-    if (req.file && item.isSoftCopy) {
-      await deleteLibraryItemFromCloudinary(item.filePath);
-      const url = await uploadLibraryItemToCloudinary(req.file.path);
-      req.body.filePath = url;
+    // Fetch existing item
+    const existingItem = await LibraryItem.findById(itemId);
+    if (!existingItem) return res.status(404).json({ message: "Library item not found" });
+
+    // Soft copy
+    if (req.files?.file?.[0]) {
+      // Delete previous soft copy from Cloudinary
+      if (existingItem.filePath) {
+        await deleteLibraryItemFromCloudinary(existingItem.filePath, "library_items");
+      }
+
+      // Upload new soft copy
+      const url = await uploadLibraryItemToCloudinary(req.files.file[0].path, "library_items");
+      data.filePath = url;
+      data.isSoftCopy = true;
     }
 
-    const updated = await LibraryItem.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(updated);
+    // Cover page
+    if (req.files?.cover?.[0]) {
+      // Delete previous cover from Cloudinary
+      if (existingItem.bookCoverPic) {
+        await deleteLibraryItemFromCloudinary(existingItem.bookCoverPic);
+      }
+
+      // Upload new cover
+      const coverUrl = await uploadLibraryItemToCloudinary(req.files.cover[0].path);
+      data.bookCoverPic = coverUrl;
+    }
+
+    const updatedItem = await LibraryItem.findByIdAndUpdate(itemId, data, { new: true });
+    res.json(updatedItem);
+
   } catch (err) {
     console.error(err);
     res.status(400).json({ message: err.message });
   }
 };
 
+
 // DELETE library item
 export const deleteLibraryItem = async (req, res) => {
   try {
     const item = await LibraryItem.findById(req.params.id);
-    if (!item) return res.status(404).json({ message: "Item not found" });
+    if (!item) return res.status(404).json({ message: "Library item not found" });
 
-    if (item.isSoftCopy) await deleteLibraryItemFromCloudinary(item.filePath);
+    // Delete files from Cloudinary if they exist
+    if (item.filePath) await deleteLibraryItemFromCloudinary(item.filePath);
+    if (item.bookCoverPic) await deleteLibraryItemFromCloudinary(item.bookCoverPic);
 
-    await LibraryItem.findByIdAndDelete(req.params.id);
-    res.json({ message: "Library item deleted" });
+    // Delete the document from MongoDB
+    await LibraryItem.deleteOne({ _id: item._id });
+
+    res.status(200).json({ message: "Library item deleted successfully" });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: err.message });

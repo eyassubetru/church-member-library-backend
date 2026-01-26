@@ -7,7 +7,6 @@ import memberRoutes from "./routes/member.routes.js";
 import documentRoutes from "./routes/document.routes.js";
 import libraryRoutes from "./routes/library.routes.js";
 // import borrowingRoutes from "./routes/borrowing.routes.js";
-// import adminRoutes from "./routes/admin.routes.js";
 // import statsRoutes from "./routes/stats.routes.js";
 
 const app = express();

@@ -44,8 +44,6 @@ export const uploadLibraryItemToCloudinary = async (filePath, folder = "library_
       folder,
       resource_type: "auto",   // works for PDF, EPUB, images
       quality: "auto",         // automatically compress
-      fetch_format: "auto",    // convert to web-friendly format if possible
-      chunk_size: 6000000,     // large file support (6MB chunks)
     });
 
     return result.secure_url;
