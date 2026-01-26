@@ -3,24 +3,31 @@ import mongoose from "mongoose";
 const LibraryItemSchema = new mongoose.Schema({
   title: { type: String, required: true },
   titleAmharic: String,
-
   authorName: String,
   authorAmharicName: String,
-
-  itemType: {
-    type: String,
-    required: true
-  },
-
   category: String,
   description: String,
 
-  bookCoverPic: String, // Cloudinary URL
+  bookCoverPic: String, // optional
 
-  hardCopyTotal: { type: Number, default: 0 },
-  hardCopyAvailable: { type: Number, default: 0 },
+  hardCopyTotal: {
+    type: Number,
+    required: function () {
+      return !this.isSoftCopy;
+    }
+  },
+  hardCopyAvailable: {
+  type: Number,
+  default: function () {
+    // if this is a hard copy item, set available = total
+    return this.isSoftCopy ? 0 : this.hardCopyTotal;
+  },
+  required: function () {
+    return !this.isSoftCopy; // required only for hard copy
+  }
+},
 
-  isSoftCopy: { type: Boolean, default: false },
+  isSoftCopy: { type: Boolean },
 
   filePath: {
     type: String,
@@ -28,7 +35,15 @@ const LibraryItemSchema = new mongoose.Schema({
       return this.isSoftCopy;
     }
   }
+
 }, { timestamps: true });
+
+// Pre-save hook to set hardCopyAvailable automatically
+LibraryItemSchema.pre("save", function () {
+  if (!this.isSoftCopy && (this.hardCopyAvailable === undefined || this.hardCopyAvailable === null)) {
+    this.hardCopyAvailable = this.hardCopyTotal;
+  }
+});
 
 const LibraryItem = mongoose.model("LibraryItem", LibraryItemSchema);
 export default LibraryItem;
