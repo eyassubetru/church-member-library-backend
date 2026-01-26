@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/eyassubetru/church-member-library-backend#readme",
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.9.0",
     "cors": "^2.8.6",
@@ -31,6 +32,7 @@
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.12",
+    "pdf-lib": "^1.17.1",
     "sharp": "^0.34.5"
   }
 }

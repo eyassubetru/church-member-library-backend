@@ -1,22 +1,34 @@
 import mongoose from "mongoose";
 
-const LibraryItemSchema =new mongoose.Schema({
-title:String,
-titleAmharic:String,
-authorName:String,
-category:String,
-description:String,
+const LibraryItemSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  titleAmharic: String,
 
-bookCoverPic: String,
+  authorName: String,
+  authorAmharicName: String,
 
-hardCopyTotal: Number,
-hardCopyAvailable:Number,
+  itemType: {
+    type: String,
+    required: true
+  },
 
-isSoftCopy:Boolean,
-filePath:String
-}, {timestamps:true });
+  category: String,
+  description: String,
 
+  bookCoverPic: String, // Cloudinary URL
 
+  hardCopyTotal: { type: Number, default: 0 },
+  hardCopyAvailable: { type: Number, default: 0 },
 
-const LibraryItem = mongoose.model('LibraryItem', LibraryItemSchema)
+  isSoftCopy: { type: Boolean, default: false },
+
+  filePath: {
+    type: String,
+    required: function () {
+      return this.isSoftCopy;
+    }
+  }
+}, { timestamps: true });
+
+const LibraryItem = mongoose.model("LibraryItem", LibraryItemSchema);
 export default LibraryItem;
