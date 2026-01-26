@@ -22,6 +22,6 @@ router.post(
 router.delete("/:id", authenticate, isAdmin, deleteDocument);
 
 // Get all documents for a member
-router.get("/member/:memberId", authenticate, getMemberDocuments);
+router.get("/member/:memberId", authenticate, isAdmin, getMemberDocuments);
 
 export default router;

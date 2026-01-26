@@ -6,36 +6,40 @@ import {sendEmail} from '../utils/email.js'
 export const login = async (req, res) => {
   try {
     const { identifier, password } = req.body;
-    // identifier = username OR email
-
     if (!identifier || !password) {
       return res.status(400).json({ message: "Missing credentials" });
     }
 
     const member = await Member.findOne({
-      $or: [
-        { username: identifier },
-        { email: identifier }
-      ]
+      $or: [{ username: identifier }, { email: identifier }]
     });
 
-    if (!member) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!member) return res.status(400).json({ message: "Invalid credentials" });
 
     const isMatch = await member.comparePassword(password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign(
+    // 1️⃣ Access Token
+    const accessToken = jwt.sign(
       { id: member._id, role: member.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "15m" } // short-lived
     );
 
+    // 2️⃣ Refresh Token
+    const refreshToken = jwt.sign(
+      { id: member._id, role: member.role },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "7d" } // long-lived
+    );
+
+    // Save refresh token in DB
+    member.refreshToken = refreshToken;
+    await member.save();
+
     res.json({
-      token,
+      accessToken,
+      refreshToken,
       member: {
         id: member._id,
         name: member.name,
@@ -47,6 +51,34 @@ export const login = async (req, res) => {
     res.status(500).json({ message: "Login failed" });
   }
 };
+
+export const refreshAccessToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) return res.status(401).json({ message: "No refresh token provided" });
+
+    const member = await Member.findOne({ refreshToken });
+    if (!member) return res.status(403).json({ message: "Invalid refresh token" });
+
+    // Verify token
+    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, (err, decoded) => {
+      if (err) return res.status(403).json({ message: "Invalid refresh token" });
+
+      const newAccessToken = jwt.sign(
+        { id: member._id, role: member.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "15m" }
+      );
+
+      res.json({ accessToken: newAccessToken });
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to refresh access token" });
+  }
+};
+
 
 
 export const forgotPassword = async (req, res) => {
@@ -105,6 +137,24 @@ export const resetPassword = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Password reset failed" });
+  }
+};
+export const logout = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) return res.sendStatus(204);
+
+    const member = await Member.findOne({ refreshToken });
+    if (member) {
+      member.refreshToken = null;
+      await member.save();
+    }
+
+    res.status(200).json({ message: "Logged out successfully" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Logout failed" });
   }
 };
 

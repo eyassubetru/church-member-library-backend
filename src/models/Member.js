@@ -49,6 +49,10 @@ const MemberSchema = new mongoose.Schema({
   resetCode: String,
   resetCodeExpires: Date,
 
+  refreshToken: {
+  type: String
+  }
+
 }, { timestamps: true });
 
 // Hash password before save

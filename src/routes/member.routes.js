@@ -14,7 +14,7 @@ router.post( "/paper", authenticate, isAdmin, createPaperMember);
 /**
  * New member self signup
  */
-router.post( "/signup", signupNewMember);
+router.post( "/signup",authenticate, isAdmin, signupNewMember);
 
 router.get('/',getAllMembers )
 router.get("/search", authenticate, isAdmin, searchMember);
