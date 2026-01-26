@@ -33,7 +33,7 @@ const DocumentSchema = new mongoose.Schema(
     },
 
     documentSource: {
-      type: String,
+      type: String, //curch or member 
     },
 
     // Who uploaded it (admin or member)
