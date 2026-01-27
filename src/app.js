@@ -6,7 +6,7 @@ import authRoutes from "./routes/auth.routes.js";
 import memberRoutes from "./routes/member.routes.js";
 import documentRoutes from "./routes/document.routes.js";
 import libraryRoutes from "./routes/library.routes.js";
-// import borrowingRoutes from "./routes/borrowing.routes.js";
+import borrowingRoutes from "./routes/borrowing.routes.js";
 // import statsRoutes from "./routes/stats.routes.js";
 
 const app = express();
@@ -21,7 +21,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/members", memberRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/library", libraryRoutes);
-// app.use("/api/borrowings", borrowingRoutes);
+app.use("/api/borrowings", borrowingRoutes);
 // app.use("/api/admins", adminRoutes);
 // app.use("/api/stats", statsRoutes);
 

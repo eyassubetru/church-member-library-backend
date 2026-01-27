@@ -9,6 +9,8 @@ const generateTempPassword = () => crypto.randomBytes(4).toString("hex"); // 8 c
 // Admin adds paper member
 export const createPaperMember = async (req, res) => {
   try {
+     if (!req.body || Object.keys(req.body).length === 0) {
+      return res.status(400).json({ message: "Request body is missing" });}
     const data = req.body;
 
     // Check if member already exists by idNumber
@@ -40,28 +42,8 @@ export const createPaperMember = async (req, res) => {
   }
 };
 
-// New member self-registration
-export const signupNewMember = async (req, res) => {
-  try {
-    const data = req.body;
 
-    const existing = await Member.findOne({ idNumber: data.idNumber });
-    if (existing) return res.status(400).json({ message: "Member already exists" });
 
-    // Must include username, email, password
-    if (!data.username || !data.email || !data.password) {
-      return res.status(400).json({ message: "Username, email and password are required" });
-    }
-
-    const member = new Member({ ...data, role: "member" });
-    await member.save();
-
-    res.status(201).json({ message: "Signup successful", member });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Signup failed" });
-  }
-};
 export const getAllMembers = async (req, res) => {
   try {
     const members = await Member.find().sort({ createdAt: -1 });

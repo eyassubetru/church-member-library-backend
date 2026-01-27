@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
 
 const LibraryItemSchema = new mongoose.Schema({
+   bookIdNumber: {
+    type: String,
+    required: true,
+    unique: true,     
+    index: true
+  },
   title: { type: String, required: true },
   titleAmharic: String,
   authorName: String,

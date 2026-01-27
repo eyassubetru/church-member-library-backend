@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 
 const MemberSchema = new mongoose.Schema({
   // Personal Info
-  name: String,
+  name: String, 
   fatherName: String,
   grandfatherName: String,
   nameAmharic: String,
@@ -11,7 +11,12 @@ const MemberSchema = new mongoose.Schema({
   grandfatherNameAmharic: String,
   sex: String,
   age: Number,
-  idNumber: String,
+  idNumber: {
+  type: String,
+  required: true,
+  unique: true,
+  index: true
+},
   phoneNumber: String,
   email: { type: String, unique: true, sparse: true },
 

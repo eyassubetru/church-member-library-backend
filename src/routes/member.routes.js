@@ -1,5 +1,5 @@
 import express from "express";
-import {createPaperMember, signupNewMember,getAllMembers, searchMember,updateMember,deleteMember} from "../controllers/member.controller.js";
+import {createPaperMember,getAllMembers, searchMember,updateMember,deleteMember} from "../controllers/member.controller.js";
 
 import { authenticate, isAdmin } from "../middlewares/auth.middleware.js";
 
@@ -10,11 +10,6 @@ const router = express.Router();
  * (may include username + email → temp password sent)
  */
 router.post( "/paper", authenticate, isAdmin, createPaperMember);
-
-/**
- * New member self signup
- */
-router.post( "/signup",authenticate, isAdmin, signupNewMember);
 
 router.get('/',getAllMembers )
 router.get("/search", authenticate, isAdmin, searchMember);
