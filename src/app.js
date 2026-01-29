@@ -9,12 +9,24 @@ import documentRoutes from "./routes/document.routes.js";
 import libraryRoutes from "./routes/library.routes.js";
 import borrowingRoutes from "./routes/borrowing.routes.js";
 
+const allowedOrigins = [
+  "http://localhost:5173", // React dev
+  "https://yourproductionfrontend.com" // replace with your real frontend URL
+];
+
 const app = express();
 app.use(cookieParser());
 app.use(cors({
-  origin: 'http://localhost:5173', // Your frontend URL
-  credentials: true, // Allow credentials
-  optionsSuccessStatus: 200
+  origin: function(origin, callback) {
+    // allow requests with no origin (like Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = `The CORS policy for this site does not allow access from the specified Origin.`;
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
 }));
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ extended: true , limit: '400mb'}));
