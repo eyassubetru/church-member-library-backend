@@ -11,7 +11,8 @@ import borrowingRoutes from "./routes/borrowing.routes.js";
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://church-member-magement.onrender.com"
+  "https://church-member-magement.onrender.com",
+  "https://member-management-green.vercel.app"
 ];
 
 const app = express();
