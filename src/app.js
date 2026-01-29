@@ -18,19 +18,18 @@ const app = express();
 app.use(cookieParser());
 app.use(cors({
   origin: (origin, callback) => {
-    const allowedOrigins = [
-      "http://localhost:5173",
-      "https://member-management-green.vercel.app"
-    ];
-    // allow requests with no origin (like Postman or mobile apps)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
+    // allow requests with no origin (like Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
     } else {
-      callback(new Error("CORS not allowed"));
+      return callback(new Error("CORS not allowed"));
     }
   },
-  credentials: true
+  credentials: true,
 }));
+
+app.use(express.json());
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ extended: true , limit: '400mb'}));
 
