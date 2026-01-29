@@ -1,27 +1,34 @@
-// utils/email.js
+// utils/email.js - Updated version
 import nodemailer from "nodemailer";
 
 export const sendEmail = async (to, subject, text, html) => {
   try {
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true, // Use SSL
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+      },
+      tls: {
+        rejectUnauthorized: false // Sometimes needed for Render
       }
     });
 
-    await transporter.sendMail({
+    const mailOptions = {
       from: `"Church System" <${process.env.EMAIL_USER}>`,
       to,
       subject,
-      text, // fallback
-      html  // styled content
-    });
+      text,
+      html
+    };
 
-    console.log("📧 Email sent to:", to);
+    const info = await transporter.sendMail(mailOptions);
+    console.log("📧 Email sent:", info.messageId);
+    return info;
   } catch (error) {
-    console.error("❌ Email error:", error);
+    console.error("❌ Email error:", error.message);
     throw error;
   }
 };
