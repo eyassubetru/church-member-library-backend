@@ -20,7 +20,7 @@ async function startServer () {
         await mongoose.connect(process.env.MONGO_URI);
     console.log('MONGODB CONNECTED');
 
-    app.listen(PORT, ()=>{
+    app.listen(PORT, '0.0.0.0', ()=>{
         console.log(`SERVER IS RUNNING ON PORT ${PORT}`)
     })
     } catch (error) {

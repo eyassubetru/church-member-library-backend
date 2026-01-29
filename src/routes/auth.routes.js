@@ -3,13 +3,15 @@ import {
   login,
   forgotPassword,
   resetPassword,
-  logout
+  logout,
+  refreshAccessToken
 } from "../controllers/auth.controller.js";
 
 const router = express.Router();
 
 
 router.post("/login", login);
+router.post("/refresh", refreshAccessToken);
 
 router.post("/forgot-password", forgotPassword);
 

@@ -1,7 +1,7 @@
 import Member from "../models/Member.js";
 import jwt from "jsonwebtoken";
-import { randomBytes } from "crypto";
-import {sendEmail} from '../utils/email.js'
+import crypto  from "crypto";
+import { sendEmail } from '../utils/email.js'
 
 export const login = async (req, res) => {
   try {
@@ -33,9 +33,20 @@ export const login = async (req, res) => {
       { expiresIn: "7d" } // long-lived
     );
 
-    // Save refresh token in DB
-    member.refreshToken = refreshToken;
+    const refreshTokenHash = crypto
+      .createHash("sha256")
+      .update(refreshToken)
+      .digest("hex");
+
+    member.refreshToken = refreshTokenHash;
     await member.save();
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
 
     res.json({
       accessToken,
@@ -54,25 +65,53 @@ export const login = async (req, res) => {
 
 export const refreshAccessToken = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    // 1️⃣ Get refresh token from cookie
+    const refreshToken = req.cookies?.refreshToken;
+    if (!refreshToken) return res.sendStatus(401);
 
-    if (!refreshToken) return res.status(401).json({ message: "No refresh token provided" });
+    // 2️⃣ Hash the token to match DB
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(refreshToken)
+      .digest("hex");
 
-    const member = await Member.findOne({ refreshToken });
-    if (!member) return res.status(403).json({ message: "Invalid refresh token" });
+    // 3️⃣ Find member
+    const member = await Member.findOne({ refreshToken: hashedToken });
+    if (!member) {
+      // Invalid token → clear cookie
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+      });
+      return res.sendStatus(403);
+    }
 
-    // Verify token
-    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, (err, decoded) => {
-      if (err) return res.status(403).json({ message: "Invalid refresh token" });
+    // 4️⃣ Verify token
+    try {
+      jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    } catch (err) {
+      // expired or invalid → clear cookie
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+      });
+      return res.sendStatus(403);
+    }
 
-      const newAccessToken = jwt.sign(
-        { id: member._id, role: member.role },
-        process.env.JWT_SECRET,
-        { expiresIn: "15m" }
-      );
+    // 5️⃣ Issue new access token
+    const newAccessToken = jwt.sign(
+      { id: member._id, role: member.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "15m" }
+    );
 
-      res.json({ accessToken: newAccessToken });
-    });
+    res.json({ accessToken: newAccessToken,member: {
+        id: member._id,
+        name: member.name,
+        role: member.role
+      } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to refresh access token" });
@@ -80,11 +119,42 @@ export const refreshAccessToken = async (req, res) => {
 };
 
 
+export const logout = async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+    if (!refreshToken) return res.sendStatus(204);
+
+    // hash the cookie token
+    const refreshTokenHash = crypto
+      .createHash("sha256")
+      .update(refreshToken)
+      .digest("hex");
+
+    const member = await Member.findOne({ refreshToken: refreshTokenHash });
+
+    if (member) {
+      member.refreshToken = null;
+      await member.save();
+    }
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production"
+    });
+
+    res.status(200).json({ message: "Logged out successfully" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Logout failed" });
+  }
+};
 
 export const forgotPassword = async (req, res) => {
 
   const generateResetCode = () =>
-   Math.floor(100000 + Math.random() * 900000).toString();
+    Math.floor(100000 + Math.random() * 900000).toString();
 
   try {
     const { email } = req.body;
@@ -101,10 +171,45 @@ export const forgotPassword = async (req, res) => {
     await member.save();
 
     await sendEmail(
-      email,
-      "Password Reset Code",
-      `Your password reset code is: ${code}`
-    );
+  email,
+  "Password Reset Code",
+  `Your password reset code is: ${code}`,
+  `
+  <div style="font-family: Arial, sans-serif; max-width: 500px; margin: auto;">
+    <h2 style="color: #1f2937;">Password Reset Request</h2>
+
+    <p>Hello,</p>
+
+    <p>
+      You requested to reset your password.  
+      Use the code below to continue. This code will expire in
+      <strong>10 minutes</strong>.
+    </p>
+
+    <div style="
+      background: #f3f4f6;
+      padding: 16px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      border-radius: 6px;
+      margin: 20px 0;
+    ">
+      ${code}
+    </div>
+
+    <p style="font-size: 14px; color: #6b7280;">
+      If you did not request this, you can safely ignore this email.
+    </p>
+
+    <hr style="margin-top: 30px;" />
+    <p style="font-size: 12px; color: #9ca3af;">
+      Church Management System
+    </p>
+  </div>
+  `
+);
 
     res.json({ message: "Reset code sent to email" });
   } catch (err) {
@@ -139,24 +244,7 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Password reset failed" });
   }
 };
-export const logout = async (req, res) => {
-  try {
-    const { refreshToken } = req.body;
-    if (!refreshToken) return res.sendStatus(204);
 
-    const member = await Member.findOne({ refreshToken });
-    if (member) {
-      member.refreshToken = null;
-      await member.save();
-    }
-
-    res.status(200).json({ message: "Logged out successfully" });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Logout failed" });
-  }
-};
 
 
 

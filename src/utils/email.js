@@ -1,6 +1,7 @@
+// utils/email.js
 import nodemailer from "nodemailer";
 
-export const sendEmail = async (to, subject, text) => {
+export const sendEmail = async (to, subject, text, html) => {
   try {
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -14,7 +15,8 @@ export const sendEmail = async (to, subject, text) => {
       from: `"Church System" <${process.env.EMAIL_USER}>`,
       to,
       subject,
-      text
+      text, // fallback
+      html  // styled content
     });
 
     console.log("📧 Email sent to:", to);
