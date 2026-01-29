@@ -10,13 +10,13 @@ import libraryRoutes from "./routes/library.routes.js";
 import borrowingRoutes from "./routes/borrowing.routes.js";
 
 const allowedOrigins = [
-  "http://localhost:5173", // React dev
-  "https://yourproductionfrontend.com" // replace with your real frontend URL
+  "http://localhost:5173",
+  "https://member-management-green.vercel.app"
 ];
 
 const app = express();
 app.use(cookieParser());
-app.use(cors({origin: "http://localhost:5173", // your frontend URL
+app.use(cors({origin: allowedOrigins, // your frontend URL
   credentials: true
 }));
 app.use(express.json({ limit: '500mb' }));
