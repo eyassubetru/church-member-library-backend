@@ -38,7 +38,7 @@ const MemberSchema = new mongoose.Schema({
   employmentStatus: String,
   organization: String,
   skills: String,
-  completedCourses: { type: [String], required: true },
+  completedCourses: { type: [String] },
   serviceArea: String,
   serviceExplanation: String,
   testimony: String,
