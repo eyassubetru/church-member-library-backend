@@ -171,7 +171,8 @@ export const forgotPassword = async (req, res) => {
     member.resetCodeExpires = Date.now() + 10 * 60 * 1000; // 10 min
     await member.save();
 
-    await sendEmail(
+    try{ 
+      await sendEmail(
   email,
   "Password Reset Code",
   `Your password reset code is: ${code}`,
@@ -210,7 +211,10 @@ export const forgotPassword = async (req, res) => {
     </p>
   </div>
   `
-);
+)}catch(err){
+   console.error("Email sending failed:", err.message);
+      return res.status(500).json({ message: "Failed to send email" });
+};
 
     res.json({ message: "Reset code sent to email" });
   } catch (err) {
