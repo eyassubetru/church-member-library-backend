@@ -17,16 +17,20 @@ const allowedOrigins = [
 const app = express();
 app.use(cookieParser());
 app.use(cors({
-  origin: (origin, callback) => {
-    // allow requests with no origin (like Postman)
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
     } else {
-      return callback(new Error("CORS not allowed"));
+      console.log("Rejected Origin:", origin); // Helpful for debugging
+      callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(express.json());
