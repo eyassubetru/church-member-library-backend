@@ -16,7 +16,19 @@ const allowedOrigins = [
 
 const app = express();
 app.use(cookieParser());
-app.use(cors({origin: allowedOrigins, // your frontend URL
+app.use(cors({
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "https://member-management-green.vercel.app"
+    ];
+    // allow requests with no origin (like Postman or mobile apps)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS not allowed"));
+    }
+  },
   credentials: true
 }));
 app.use(express.json({ limit: '500mb' }));
