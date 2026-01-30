@@ -14,7 +14,7 @@ const allowedOrigins = [
   "https://church-member-magement.onrender.com",
   "https://member-management-green.vercel.app",
   "http://192.168.8.40:5173",
-  "http://http://192.168.8.216:5173",
+  "http://192.168.8.216:5173",
 ];
 
 const app = express();
