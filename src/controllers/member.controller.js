@@ -28,7 +28,7 @@ export const createPaperMember = async (req, res) => {
     await member.save();
 
     // Send email with temp password if exists
-    if (tempPassword) {
+    /* if (tempPassword) {
       await sendEmail(
   data.email,
   "Your Church Account Has Been Created",
@@ -71,7 +71,7 @@ export const createPaperMember = async (req, res) => {
   </div>
   `
 );
-    }
+    } */
 
     res.status(201).json({ message: "Paper member created", member });
   } catch (error) {
