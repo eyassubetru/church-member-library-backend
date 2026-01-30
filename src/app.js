@@ -12,7 +12,8 @@ import borrowingRoutes from "./routes/borrowing.routes.js";
 const allowedOrigins = [
   "http://localhost:5173",
   "https://church-member-magement.onrender.com",
-  "https://member-management-green.vercel.app"
+  "https://member-management-green.vercel.app",
+  "http://192.168.8.40:5173"
 ];
 
 const app = express();
@@ -38,8 +39,13 @@ app.use(express.json());
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ extended: true , limit: '400mb'}));
 
-// Routes
+// check where user is 
+app.use("/api/where",(req,res)=>{
+  console.log('local')
+  res.status(200).send("local")
+})
 
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/members", memberRoutes);
 app.use("/api/documents", documentRoutes);
