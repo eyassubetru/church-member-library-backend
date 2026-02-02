@@ -19,9 +19,14 @@ export const createPaperMember = async (req, res) => {
 
     // If username/email provided, generate password
     let tempPassword = null;
-    if (data.username && data.email) {
+   /* if (data.username && data.email) {
       tempPassword = generateTempPassword();
       data.password = tempPassword;
+    }*/
+    if (data.username && !data.password) {
+      return res.status(400).json({
+        message: "Password is required when username is provided",
+      });
     }
 
     const member = new Member(data);
